@@ -1,0 +1,27 @@
+{% extends 'layout/basic.html' %}
+{% load static %}
+
+{% block title %}产品功能{% endblock %}
+
+{% block css %}
+    <style>
+        img {
+            width: 100%;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div>
+{#        <img src="{% static 'img/index/index-1.png' %}">#}
+{#        <img src="{% static 'img/index/index-2.png' %}">#}
+        <img src="{% static 'img/index/index-3.png' %}">
+        <img src="{% static 'img/index/func-1.png' %}">
+        <img src="{% static 'img/index/func-2.png' %}">
+        <img src="{% static 'img/index/func-3.png' %}">
+        <img src="{% static 'img/index/func-4.png' %}">
+        <img src="{% static 'img/index/func-5.png' %}">
+        <img src="{% static 'img/index/func-6.png' %}">
+{#        <img src="{% static 'img/index/index-4.png' %}">#}
+    </div>
+{% endblock %}

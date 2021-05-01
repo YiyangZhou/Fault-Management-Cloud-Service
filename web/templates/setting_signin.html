@@ -1,0 +1,80 @@
+{% extends 'layout/manage.html' %}
+
+{% block css %}
+    <style>
+        .choose {
+            border-left: 2px solid #4D344A !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container clearfix" style="margin-top: 20px;">
+        <div class="col-sm-3">
+            <div class="panel panel-default">
+                <div class="panel-heading" style="background-color:transparent;font-weight: bold;">
+                    个人中心
+                </div>
+                <div class="list-group" style="border-radius: 0">
+                    <div>
+                        <a href="{% url 'setting_mysetting' project_id=request.tracer.project.id %}"
+                           class="list-group-item">我的资料</a>
+                        <a href="{% url 'setting_changepwd' project_id=request.tracer.project.id %}"
+                           class="list-group-item">修改密码</a>
+                        <a href="{% url 'setting_delete'  project_id=request.tracer.project.id %}"
+                           class="list-group-item">删除项目</a>
+                        {% if create == request.tracer.user.id %}
+                            <a href="{% url 'setting_managepro' project_id=request.tracer.project.id %}"
+                               class="list-group-item">管理项目</a>
+                            <a href="{% url 'setting_signin' project_id=request.tracer.project.id %}"
+                               class="list-group-item choose">签到时间管理</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-9">
+            <div class="panel panel-default">
+                <div class="panel-heading"><i class="fa fa-check-square" aria-hidden="true"></i> 签到时间管理</div>
+                <div class="panel-body">
+                    <form class="form-horizontal" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <div class="col-sm-2">
+                                <label class="control-label">签到时间</label>
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" placeholder="签到时间:{{ morning1 }}" name="mor1">
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" placeholder="最晚时间:{{ morning2 }}" name="mor2">
+                            </div>
+
+
+
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-2">
+                                <label class="control-label">签退时间</label>
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" placeholder="签退时间:{{ arfter1 }}" name="arf1">
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" placeholder="最晚时间:{{ arfter2 }}" name="arf2">
+                            </div>
+                            <div class="col-sm-3">
+                                <input type="submit" class="btn btn-danger" value="更 改">
+                            </div>
+
+
+                        </div>
+
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}

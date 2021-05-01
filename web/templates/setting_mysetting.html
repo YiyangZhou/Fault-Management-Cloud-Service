@@ -1,0 +1,138 @@
+{% extends 'layout/manage.html' %}
+{% load static %}
+{% block css %}
+    <style>
+        .choose {
+            border-left: 2px solid #1DC116 !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container clearfix" style="margin-top: 20px;">
+        <div class="col-sm-3">
+            <div class="panel panel-default">
+                <div class="panel-heading" style="background-color:transparent;font-weight: bold;">
+                    个人中心
+                </div>
+                <div class="list-group" style="border-radius: 0">
+                    <div>
+                        <a href="{% url 'setting_mysetting' project_id=request.tracer.project.id %}"
+                           class="list-group-item choose">我的资料</a>
+                        <a href="{% url 'setting_changepwd' project_id=request.tracer.project.id %}"
+                           class="list-group-item">修改密码</a>
+                        <a href="{% url 'setting_delete'  project_id=request.tracer.project.id %}"
+                           class="list-group-item">删除项目</a>
+                        {% if create == request.tracer.user.id %}
+                            <a href="{% url 'setting_managepro' project_id=request.tracer.project.id %}"
+                               class="list-group-item">管理项目</a>
+                            <a href="{% url 'setting_signin' project_id=request.tracer.project.id %}"
+                               class="list-group-item">签到时间管理</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-9">
+            <div class="panel panel-default">
+                <div class="panel-heading"><i class="fa fa-address-book-o" aria-hidden="true"></i> 我的资料</div>
+                <div class="panel-body">
+                    <div class="form-group col-md-9">
+                        <label class="col-sm-2 control-label">vip等级:</label>
+                        <div class="col-sm-7">
+                            {% if vip_id == 1 %}
+                                <span class="label label-danger">免费vip</span>
+
+                            {% endif %}
+                            {% if vip_id == 2 %}
+                                <span class="label label-warning">vip</span>
+
+                            {% endif %}
+                            {% if vip_id == 3 %}
+                                <span class="label label-warning">高级vip</span>
+
+                            {% endif %}
+                            {% if vip_id == 4 %}
+                                <span class="label label-warning">终极vip</span>
+
+                            {% endif %}
+
+                        </div>
+                    </div>
+                    <div class="form-group col-md-9">
+                        <label class="col-sm-2 control-label">vip剩余天数:</label>
+                        <div class="col-sm-7">
+                            {% if vip_id == 1 %}
+                                <div><span class="badge">无限制</span></div>
+                            {% else %}
+                                <div><span class="badge">{{ leave_time }}天
+                                </span></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group col-md-9">
+                        <label class="col-sm-2 control-label">用户名:</label>
+                        <div class="col-sm-7">
+                            <span class="label label-info">{{ user_obj.username }}</span>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-9">
+                        <label class="col-sm-2 control-label">手机号:</label>
+                        <div class="col-sm-7">
+                            <span class="label label-info">{{ user_obj.mobile_phone }}</span>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-9">
+                        <label class="col-sm-2 control-label">邮箱:</label>
+                        <div class="col-sm-7">
+                            <span class="label label-info">{{ user_obj.email }}</span>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-9">
+                        <label class="col-sm-2 control-label">人脸信息:</label>
+                        {% if user_obj.image != null %}
+                            <div class="col-sm-7">
+                                <span class="label label-info">人脸信息已录入</span>
+                            </div>
+                        {% else %}
+                            <div class="col-sm-7">
+                            <span class="label label-danger">人脸信息未录入</span>
+                            <a href="{% url 'facein' project_id=request.tracer.project.id %}"> 去录入</a>
+                        {% endif %}
+                        </div>
+                    {% if user_obj.image != null %}
+                        <div class="form-group col-md-9">
+                            <label class="col-sm-2 control-label">照片:</label>
+                            <div class="col-sm-7">
+                                <a class="btn btn-success btn-xs" data-toggle="modal" data-target="#addModal">查看照片</a>
+                                <a href="{% url 'facein' project_id=request.tracer.project.id %}" class="btn btn-danger btn-xs">重新录入</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                    </div>
+
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div id="addModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog"
+         aria-labelledby="myLargeModalLabel">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">查看照片</h4>
+                </div>
+                <div class="modal-body" style="padding-right: 40px;">
+                    <img src="{% static '/' %}{{ face_path }}" alt="" style="height: 200px; width: 200px; margin-left: 40%">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关  闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

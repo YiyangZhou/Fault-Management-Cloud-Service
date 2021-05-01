@@ -1,0 +1,170 @@
+{% extends 'layout/face_basic.html' %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/sweetalert.css' %}">
+    <style>
+        body {
+            background-image: url("{% static 'img/background/background.jpg' %}");
+            background-repeat: no-repeat;
+        }
+
+        button {
+            height: 40px;
+            width: 200px;
+            color: #fff;
+            font-weight: 700;
+            background-color: #007bff;
+            border-color: #007bff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #007bda;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div style="margin-top: 80px;">
+        {% csrf_token %}
+        <p>
+        <center>
+            <button type="button" onclick="button_callback()">人脸打卡</button>
+        </center>
+        </p>
+        <video autoplay style="display: none"></video>
+        <p>
+        <center>
+            <canvas width=640 height=480 style="display:block"></canvas>
+        </center>
+        </p>
+        <div>
+            <canvas id="canvas" width=200 height=200 style="display: none;"></canvas>
+        </div>
+    </div>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'js/jquery-3.5.1.min.js' %}"></script>
+    <script src="{% static 'js/sweetalert.min.js' %}"></script>
+    <script src="{% static 'js/camvas.js' %}"></script>
+    <script src="{% static 'js/pico.js' %}"></script>
+    <script src="{% static 'js/lploc.js' %}"></script>
+    <script>
+        var initialized = false;
+        var get_status = false;
+        var get_code = false;
+        var path;
+
+        function button_callback() {
+            if (initialized)
+                return;
+            var update_memory = pico.instantiate_detection_memory(5);
+            let facefinder_classify_region = function (r, c, s, pixels, ldim) {
+                return -1.0;
+            };
+            let cascadeurl = '{% static 'js/facefinder' %}';
+            fetch(cascadeurl).then(function (response) {
+                response.arrayBuffer().then(function (buffer) {
+                    let bytes = new Int8Array(buffer);
+                    facefinder_classify_region = pico.unpack_cascade(bytes);
+                    console.log('* facefinder loaded');
+                })
+            })
+            let ctx = document.getElementsByTagName('canvas')[0].getContext('2d');
+
+            function rgba_to_grayscale(rgba, nrows, ncols) {
+                let gray = new Uint8Array(nrows * ncols);
+                for (let r = 0; r < nrows; ++r)
+                    for (let c = 0; c < ncols; ++c)
+                        gray[r * ncols + c] = (2 * rgba[r * 4 * ncols + 4 * c + 0] + 7 * rgba[r * 4 * ncols + 4 * c + 1] + 1 * rgba[r * 4 * ncols + 4 * c + 2]) / 10;
+                return gray;
+            }
+
+            let processfn = function (video, dt) {
+                ctx.drawImage(video, 0, 0);
+                let rgba = ctx.getImageData(0, 0, 640, 480).data;
+                image = {
+                    "pixels": rgba_to_grayscale(rgba, 480, 640),
+                    "nrows": 480,
+                    "ncols": 640,
+                    "ldim": 640
+                }
+                params = {
+                    "shiftfactor": 0.1,
+                    "minsize": 100,
+                    "maxsize": 1000,
+                    "scalefactor": 1.1
+                }
+                dets = pico.run_cascade(image, facefinder_classify_region, params);
+                dets = update_memory(dets);
+                dets = pico.cluster_detections(dets, 0.2);
+                for (i = 0; i < dets.length; ++i) {
+                    if (dets[i][3] > 50.0) {
+                        get_status = true;
+                        let r, c, s;
+                        ctx.beginPath();
+                        ctx.arc(dets[i][1], dets[i][0], dets[i][2] / 2, 0, 2 * Math.PI, false);
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = 'red';
+                        ctx.stroke();
+
+                    } else {
+                        get_status = false
+                    }
+                }
+                if (get_status) {
+                    canvas1 = document.getElementById("canvas");
+                    canvas1.getContext('2d').drawImage(video, 0, 0, 200, 200);
+                    path = canvas1.toDataURL('image/png');
+                    if (get_code) {
+                        return
+                    } else {
+                        get_code = true;
+                        request(path)
+                    }
+                }
+            };
+            let mycamvas = new camvas(ctx, processfn, get_status);
+            initialized = true;
+        }
+
+        function request(pa) {
+            const formData = new FormData();
+            formData.append("img", pa);
+            formData.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
+            $.ajax({
+                url: '{% url 'facepoint' project_id=request.tracer.project.id %}',
+                type: 'POST',
+                processData: false,
+                contentType: false,
+                data: formData,
+                success: function (response) {
+                    if (response.status == 1005) {
+                        swal("操作成功!", response.msg, "success");
+                        wav('wav.mp3');
+                        setTimeout(function () {
+                            location.reload()
+                        }, 2000)
+                    } else if (response.status == 1010) {
+                        swal("操作成功!", response.msg, "success");
+                        setTimeout(function () {
+                            location.reload()
+                        }, 2000)
+                    } else {
+                        swal("操作失败!", response.msg, "error");
+                        get_code = false
+                    }
+                }
+            })
+        }
+
+        function wav(src) {
+            let strAudio = "<audio id='audioPlay' src='D://djangoProject//saas//web//static//wav" + src + "' hidden='true'>";
+            if ($("#audioPlay").length <= 0) {
+                $("body").append(strAudio);
+            }
+            let audio = document.getElementById("audioPlay");
+            audio.play();
+        }
+    </script>
+{% endblock %}

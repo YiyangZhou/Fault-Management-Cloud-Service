@@ -1,0 +1,188 @@
+{% extends 'layout/manage.html' %}
+
+{% block css %}
+    <style>
+        .choose {
+            border-left: 2px solid #50fefe !important;
+        }
+
+        .manage {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container clearfix" style="margin-top: 20px;">
+        <div class="col-sm-3">
+            <div class="panel panel-default">
+                <div class="panel-heading" style="background-color:transparent;font-weight: bold;">
+                    个人中心
+                </div>
+                <div class="list-group" style="border-radius: 0">
+                    <div>
+                        <a href="{% url 'setting_mysetting' project_id=request.tracer.project.id %}"
+                           class="list-group-item">我的资料</a>
+                        <a href="{% url 'setting_changepwd' project_id=request.tracer.project.id %}"
+                           class="list-group-item">修改密码</a>
+                        <a href="{% url 'setting_delete'  project_id=request.tracer.project.id %}"
+                           class="list-group-item">删除项目</a>
+                        {% if create == request.tracer.user.id %}
+                            <a href="{% url 'setting_managepro' project_id=request.tracer.project.id %}"
+                               class="list-group-item choose">管理项目</a>
+                            <a href="{% url 'setting_signin' project_id=request.tracer.project.id %}"
+                               class="list-group-item">签到时间管理</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-9">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="fa fa-cog" aria-hidden="true"></i> 管理项目
+                </div>
+                <div class="panel-body">
+                    <div class="form-group col-md-9">
+                        <button type="button" class="btn btn-success btn-xs addb" data-toggle="modal"
+                                data-target=".bs-example-modal-lg">添加模块
+                        </button>
+                        <button type="button" class="btn btn-danger btn-xs" data-toggle="modal"
+                                data-target=".bs-example-modal-lg1">删除模块
+                        </button>
+                        <div class="list-group" style="margin-top: 10px;">
+                            <div class="list-group-item active manage">模块列表
+
+                            </div>
+                            <ul class="list-group">
+                                {% if model_list %}
+                                    {% for item in model_list %}
+
+                                        <li class="list-group-item manage" id="fid">{{ item }}
+
+                                        </li>
+
+                                    {% endfor %}
+
+                                {% endif %}
+                            </ul>
+
+
+                        </div>
+
+
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">添加模块</h4>
+                    </div>
+                    <div class="modal-body" style="padding-right: 40px;">
+                        <form id="addForm">
+                            <div class="form-group">
+                                <label>模块名</label>
+                                <input id="modelid" class="form-control" type="text">
+                                <span class="error-msg"></span>
+                            </div>
+                            <button type="button" class="btn btn-success" id="btnAddModel">添加模块</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade bs-example-modal-lg1" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">删除模块</h4>
+                    </div>
+                    <div class="modal-body" style="padding-right: 40px;">
+                        <form id="delForm">
+                            <div class="form-group">
+                                <label>输入想要删除的模块</label>
+                                <input id="modelname" class="form-control" type="text">
+                                <span class="error-msg"></span>
+                            </div>
+                            <button type="button" class="btn btn-success" id="btnDelModel">删除</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+        $(function () {
+            bindAddSubmit();
+            bindDeletSubmit();
+        });
+
+        function bindAddSubmit() {
+            $('#btnAddModel').click(function () {
+                var modelid = $("#modelid").val();
+                $('#addForm').find('.error-msg').empty();
+                $.ajax({
+                    url: '{% url 'setting_managepro' project_id=request.tracer.project.id  %}',
+                    type: 'POST',
+                    data: {'modelid': modelid},
+                    dataType: 'JSON',
+                    success: function (res) {
+                        if (res.status) {
+                            location.href = location.href;
+                        } else {
+                            // 错误信息
+                            $.each(res.error, function (k, v) {
+                                $('#id_' + k).parent().next('.error-msg').text(v[0]);
+                            })
+
+                        }
+                    }
+                })
+            })
+        }
+
+        function bindDeletSubmit() {
+
+            $('#btnDelModel').click(function () {
+                var modelname = $("#modelname").val();
+                $('#delForm').find('.error-msg').empty();
+                $.ajax({
+                    url: '{% url 'setting_managedel' project_id=request.tracer.project.id  %}',
+                    type: 'POST',
+                    data: {'modelname': modelname},
+                    dataType: 'JSON',
+                    success: function (res) {
+                        if (res.status) {
+
+                            location.href = location.href;
+                        } else {
+                            // 错误信息
+                            $.each(res.error, function (k, v) {
+                                $('#id_' + k).parent().next('.error-msg').text(v[0]);
+                            })
+
+                        }
+                    }
+                })
+            })
+        }
+    </script>
+{% endblock %}

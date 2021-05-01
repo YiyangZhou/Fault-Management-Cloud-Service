@@ -1,0 +1,211 @@
+{% extends 'layout/face_basic.html' %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'plugin/bootstrap-datepicker/css/bootstrap-datepicker3.css' %}">
+    <style>
+        .panel-default .panel-heading {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .bb {
+            margin-top: 5px;
+        }
+
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="h4">签到记录</h4>
+                <div class="btn-toolbar">
+                    <div class="modal fade" id="staticBackdrop" data-backdrop="static" tabindex="-1" role="dialog"
+                         aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title" id="staticBackdropLabel">请选择时间段</h4>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <form class="was-validated" action="{% url 'export' project_id=request.tracer.project.id %}" method="post">
+                                    {% csrf_token %} {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div id="sandbox-container">
+                                            <div class="input-daterange input-group" id="datepicker">
+                                                <input type="text" class="is-invalid input-xs form-control"
+                                                       placeholder="开始时间" name="start" required/>
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">to</span>
+                                                </div>
+                                                <input type="text" class="is-invalid input-xs form-control"
+                                                       placeholder="结束时间" name="end" required/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-danger btn-xs bb" data-dismiss="modal">关闭
+                                        </button>
+                                        <button type="submit" class="btn btn-primary btn-xs bb">提交</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <span tabindex="0" data-toggle="tooltip" data-html="true" data-placement="right" title="导出成xls">
+                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-toggle="modal"
+                        data-target="#staticBackdrop">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="feather feather-calendar">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                导出
+            </button>
+            </span>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div id="main" style="width: 600px;height:400px;margin-left: 25%;" class="my-4 w-100 chartjs-render-monitor"></div>
+            </div>
+            <div class="panel-heading">
+                <h4 class="h4">七天出勤率</h4>
+            </div>
+            <div class="panel-body">
+                <div class="my-4 w-100 chartjs-render-monitor" id="myChart" style="width: 600px;height:400px;margin-left: 25%;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'plugin/echarts/echarts.min.js' %}"></script>
+    <script src="{% static 'plugin/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'plugin/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js' %}"></script>
+    <script>
+        $('#sandbox-container .input-daterange').datepicker({
+            language: "zh-CN"
+        });
+    </script>
+    <script type="text/javascript">
+        // based on prepared DOM, initialize echarts instance
+        var myChart = echarts.init(document.getElementById('main'));
+        var years = {{ item|safe }};
+        var year_now;
+
+        function getVirtulData(years) {
+            var series_list = new Array();
+            var calendar_list = new Array();
+            var index = 0;
+            var height;
+            var date = new Date;
+            var y = date.getFullYear();
+            for (var obj in years) {
+                height = 120 + index * 200;
+                calendar_list.push({
+                    top: height,
+                    left: 80,
+                    right: 30,
+                    orient: 'horizontal',
+                    range: y,
+                    itemStyle: {
+                        normal: {borderWidth: 1.5}
+                    },
+                    yearLabel: {
+                        margin: 40,
+                        formatter: years[obj][0][3],
+                        textStyle: {
+                            color: '#000'
+                        }
+                    }
+                });
+                series_list.push({
+                    type: 'heatmap',
+                    coordinateSystem: 'calendar',
+                    calendarIndex: index,
+                    data: years[obj],
+                    name: index,
+                    itemStyle: {
+                        normal: {
+                            color: '#5291FF'
+                        }
+                    }
+                });
+                index++;
+            }
+            myChart.resize(600, height);
+            $("#main").height(height + 200);
+            return [series_list, calendar_list]
+        }
+
+        option = {
+            title: {
+                top: 30,
+                left: 'center',
+                text: '年签到表',
+                subtext: '蓝色表示当天已签到, 白色表示当天未签到',
+            },
+            tooltip: {
+                //position: 'top',
+                formatter: function (params) {
+                    return params.value[3] + "早上" + params.value[0] + "下午" + params.value[1] + params.value[2];
+                }
+            },
+
+            calendar: getVirtulData(years)[1],
+            series: getVirtulData(years)[0]
+
+        };
+        myChart.setOption(option)
+    </script>
+    <script>
+        var myChart_bar = echarts.init(document.getElementById('myChart'));
+        myChart_bar.title = '坐标轴刻度与标签对齐';
+        options = {
+            color: ['#3398DB'],
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: [
+                {
+                    type: 'category',
+                    data: ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期天'],
+                    axisTick: {
+                        alignWithLabel: true
+                    }
+                }
+            ],
+            yAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            series: [
+                {
+                    name: '出勤率',
+                    type: 'bar',
+                    barWidth: '60%',
+                    data:{{ attendance|safe }}
+                }
+            ]
+        };
+        myChart_bar.setOption(options)
+    </script>
+{% endblock %}
